@@ -36,6 +36,10 @@ jobs:
       - name: Decide mergeability
         run: bun scripts/ci/release-gate.mjs mergeable
 
+      - name: Write recommendations report
+        if: always()
+        run: bun scripts/ci/write-recommendations.ts mergeable
+
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v6
