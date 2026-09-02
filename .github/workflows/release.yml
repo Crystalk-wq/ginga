@@ -43,6 +43,10 @@ jobs:
       - name: Decide releasability
         run: bun scripts/ci/release-gate.mjs releasable
 
+      - name: Write recommendations report
+        if: always()
+        run: bun scripts/ci/write-recommendations.ts release
+
       - name: Upload release reports
         if: always()
         uses: actions/upload-artifact@v6
