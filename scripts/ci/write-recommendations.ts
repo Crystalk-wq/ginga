@@ -58,19 +58,6 @@ const featureCandidates = [
     priority: 'medium',
     source: 'docs/zig-engine.md#recommended-next-work',
   },
-  {
-    id: 'golden-image-regressions',
-    title:
-      'Add golden-image regression tests for rendering and codec round trips',
-    priority: 'high',
-    source: 'docs/zig-engine.md#recommended-next-work',
-  },
-  {
-    id: 'spd-export-tooling',
-    title: 'Add SPD export tooling after the interchange contract is settled',
-    priority: 'medium',
-    source: 'docs/zig-engine.md#recommended-next-work',
-  },
 ] as const;
 
 function requireString(value: unknown, field: string): string {
@@ -155,6 +142,15 @@ function packageRecommendations(
   }));
 }
 
+function requireRecommendations(
+  recommendations: readonly unknown[],
+  kind: string,
+): void {
+  if (recommendations.length === 0) {
+    throw new Error(`recommendations report must contain ${kind} candidates`);
+  }
+}
+
 async function main(): Promise<void> {
   const workflow = parseWorkflow(process.argv[2]);
   const [packageText, buildZonText, changelogText] = await Promise.all([
@@ -229,14 +225,8 @@ async function main(): Promise<void> {
     },
   };
 
-  if (
-    report.recommendations.packages.length === 0 ||
-    report.recommendations.features.length === 0
-  ) {
-    throw new Error(
-      'recommendations report must contain package and feature candidates',
-    );
-  }
+  requireRecommendations(report.recommendations.packages, 'package');
+  requireRecommendations(report.recommendations.features, 'feature');
 
   const configuredReportDir = process.env.REPORT_DIR ?? '.reports';
   const reportDir = path.isAbsolute(configuredReportDir)

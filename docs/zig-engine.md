@@ -363,7 +363,8 @@ There are in-module tests for:
 
 `schemas/` defines the machine-readable CLI response contracts used by the schema-compatibility checks.
 
-`fixtures/` contains small deterministic raster fixtures and manifest validation.
+`fixtures/` contains small deterministic raster fixtures plus golden hashes for
+PNG/JPEG codec round trips and preview rendering.
 
 ### Practical Validation Commands
 
@@ -395,8 +396,6 @@ The next technically coherent milestones are:
 
 1. Extend JPEG to chroma-subsampled and progressive streams.
 2. Introduce a richer linear working image representation beyond RGBA8.
-3. Add golden-image regression tests for render output and codec round trips.
-4. Add export tooling for `.spd` once the interchange contract settles.
 
 ## Design Principle
 

@@ -4,8 +4,8 @@ The QA layer is intentionally split into three scripts:
 
 - `./qa/smoke.sh` runs the Zig helper tests and, when available, probes the
   CLI binary.
-- `./qa/regression.sh` verifies the fixture corpus via SHA-256 and is the
-  place to add golden-output comparisons when the CLI pipeline lands.
+- `./qa/regression.sh` verifies the fixture corpus and, when `GINGA_BIN` is
+  available, golden PNG/JPEG round trips and preview output via SHA-256.
 - `./qa/bench.sh` runs a command repeatedly and reports average wall-clock
   time.
 
@@ -15,4 +15,3 @@ The QA layer is intentionally split into three scripts:
 - Add new regression assets under `fixtures/`.
 - Use `GINGA_BIN` to point the scripts at a built CLI once the build graph is
   wired.
-
