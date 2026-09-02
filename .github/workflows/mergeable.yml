@@ -42,4 +42,5 @@ jobs:
         with:
           name: mergeable-reports
           path: .reports
-          if-no-files-found: ignore
+          if-no-files-found: error
+          include-hidden-files: true
