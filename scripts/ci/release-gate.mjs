@@ -4,16 +4,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-const scriptRepoRoot = path.resolve(moduleDir, '..', '..');
-const sourceRoot = path.resolve(process.env.GATE_SOURCE_ROOT ?? scriptRepoRoot);
-const outputRoot = path.resolve(process.env.GATE_OUTPUT_ROOT ?? sourceRoot);
+const repoRoot = path.resolve(moduleDir, '..', '..');
 
 function runGit(args) {
   return execFileSync('git', args, {
-    cwd: sourceRoot,
+    cwd: repoRoot,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'ignore']
-  }).trimEnd();
+  }).trim();
 }
 
 function tryRunGit(args) {
@@ -57,19 +55,6 @@ function fileMatchesPrefix(file, prefix) {
   return file === prefix || file.startsWith(`${prefix}/`);
 }
 
-function resolveReportPath(reportDir, configuredPath) {
-  if (typeof configuredPath !== 'string' || configuredPath.length === 0) {
-    throw new Error('release policy report paths must be non-empty strings');
-  }
-
-  const resolvedPath = path.resolve(outputRoot, configuredPath);
-  const relativePath = path.relative(reportDir, resolvedPath);
-  if (relativePath === '' || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
-    throw new Error(`release policy path must stay inside .reports: ${configuredPath}`);
-  }
-  return resolvedPath;
-}
-
 async function main() {
   const mode = process.argv[2] ?? 'mergeable';
   if (!['mergeable', 'releasable'].includes(mode)) {
@@ -77,11 +62,11 @@ async function main() {
   }
 
   const [policyText, flagsText, packageText, zonText, changelogText] = await Promise.all([
-    readFile(path.join(sourceRoot, 'release', 'policy.json'), 'utf8'),
-    readFile(path.join(sourceRoot, 'release', 'feature-flags.json'), 'utf8'),
-    readFile(path.join(sourceRoot, 'package.json'), 'utf8'),
-    readFile(path.join(sourceRoot, 'build.zig.zon'), 'utf8'),
-    readFile(path.join(sourceRoot, 'CHANGELOG.md'), 'utf8')
+    readFile(path.join(repoRoot, 'release', 'policy.json'), 'utf8'),
+    readFile(path.join(repoRoot, 'release', 'feature-flags.json'), 'utf8'),
+    readFile(path.join(repoRoot, 'package.json'), 'utf8'),
+    readFile(path.join(repoRoot, 'build.zig.zon'), 'utf8'),
+    readFile(path.join(repoRoot, 'CHANGELOG.md'), 'utf8')
   ]);
 
   const policy = JSON.parse(policyText);
@@ -141,7 +126,7 @@ async function main() {
   const releasable = mergeable && missingFlags.length === 0;
   const ok = mode === 'mergeable' ? mergeable : releasable;
 
-  const reportDir = path.join(outputRoot, '.reports');
+  const reportDir = path.join(repoRoot, '.reports');
   await mkdir(reportDir, { recursive: true });
 
   const generatedAt = process.env.SOURCE_DATE_EPOCH
@@ -152,7 +137,7 @@ async function main() {
   const gitHead = tryRunGit(['rev-parse', 'HEAD']);
   const rolloutMetadata = {
     version: packageVersion,
-    commit: gitHead || process.env.GITHUB_SHA || 'unknown',
+    commit: process.env.GITHUB_SHA ?? (gitHead || 'unknown'),
     generatedAt,
     mergeable,
     releasable,
@@ -178,15 +163,9 @@ async function main() {
   };
 
   await Promise.all([
-    writeFile(resolveReportPath(reportDir, policy.releaseNotesPath), `${releaseNotes}\n`),
-    writeFile(
-      resolveReportPath(reportDir, policy.rolloutMetadataPath),
-      `${JSON.stringify(rolloutMetadata, null, 2)}\n`
-    ),
-    writeFile(
-      resolveReportPath(reportDir, policy.reportPath),
-      `${JSON.stringify(report, null, 2)}\n`
-    )
+    writeFile(path.join(repoRoot, policy.releaseNotesPath), `${releaseNotes}\n`),
+    writeFile(path.join(repoRoot, policy.rolloutMetadataPath), `${JSON.stringify(rolloutMetadata, null, 2)}\n`),
+    writeFile(path.join(repoRoot, policy.reportPath), `${JSON.stringify(report, null, 2)}\n`)
   ]);
 
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
